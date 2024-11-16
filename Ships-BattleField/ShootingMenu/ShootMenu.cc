@@ -44,6 +44,10 @@ int ShootMenu::checkEvents()
         if (isUpdated)
         {
             newMessage.showMessage(3 + shooter->getID());
+            while(true)
+            {
+                if (Base::staticIsKeyPressed(VK_SPACE)) break;
+            }
             Console::staticClear();
             drawMenu(*shooter, *defender);
             isUpdated = false;
@@ -67,6 +71,7 @@ int ShootMenu::checkEvents()
                     if (isSinked(*defender, consoleCursor))
                     {
                         fillTheSpace(*defender, consoleCursor);
+                        defender->getBoard().drawDefeatedShips();
                         defender->getBoard().drawSigns();
 
                         if (defender->getID() == 1)
@@ -98,6 +103,7 @@ void ShootMenu::drawMenu(Player& shooter, Player& defender)
     shooter.getBoard().synchronizeShips();
     shooter.getBoard().drawBoard();
     shooter.getBoard().drawShips();
+    shooter.getBoard().drawOwnSigns();
     
     if (shooter.getID() == 1)
     {
@@ -127,6 +133,7 @@ void ShootMenu::drawMenu(Player& shooter, Player& defender)
     defender.getBoard().setOffset(130);
     defender.getBoard().synchronizeShips();
     defender.getBoard().drawBoard();
+    defender.getBoard().drawDefeatedShips();
     defender.getBoard().drawSigns();
 }
 
@@ -149,12 +156,22 @@ bool ShootMenu::shoot(Player& defender, POINT& consoleCursor)
                 Console::staticSetFontColor(getGameConsole().getScreenHandle(), 7);
             });
 
+            defender.getBoard().getOwnBoardSigns()->push_back([this, consoleCursor](){
+                Console::staticSetFontColor(getGameConsole().getScreenHandle(), 4);
+                Alphabet::drawX(getGameConsole().getScreenHandle(), 4, 4, {consoleCursor.x - 120, consoleCursor.y});
+                Console::staticSetFontColor(getGameConsole().getScreenHandle(), 7);
+            });
+
             return true;
         }
         else
         {
             defender.getBoard().getSigns()->push_back([this, consoleCursor](){
                 Number::drawLower0(getGameConsole().getScreenHandle(), 3, 4, {consoleCursor.x, consoleCursor.y});
+            }); 
+
+            defender.getBoard().getOwnBoardSigns()->push_back([this, consoleCursor](){
+                Number::drawLower0(getGameConsole().getScreenHandle(), 3, 4, {consoleCursor.x - 120, consoleCursor.y});
             }); 
 
             return false;
@@ -175,6 +192,7 @@ bool ShootMenu::shoot(Player& defender, POINT& consoleCursor)
 bool ShootMenu::isSinked(Player &defender, POINT &consoleCursor)
 {
     int shipIndex = findShipIndex(defender, consoleCursor);
+    bool isSinked = false;
 
     if (shipIndex == -1)
     {
@@ -190,11 +208,21 @@ bool ShootMenu::isSinked(Player &defender, POINT &consoleCursor)
 
     if (ship->getDirection() == 'N' || ship->getDirection() == 'S')
     {
-        return isSinkedNS(defender, startY, endY, startX);
+        if (isSinked = isSinkedNS(defender, startY, endY, startX))
+        {
+            defender.getBoard().getDefeatedShips()->push_back(ship);
+        }
+
+        return isSinked;
     }
     else
     {
-        return isSinkedEW(defender, startX, endX, startY);
+        if (isSinked = isSinkedEW(defender, startX, endX, startY))
+        {
+            defender.getBoard().getDefeatedShips()->push_back(ship);
+        }
+
+        return isSinked;
     }
     
 }
@@ -270,6 +298,10 @@ void ShootMenu::fillTheSpaceNS(Player &defender, int startX, int startY, int end
             defender.getBoard().getSigns()->push_back([this, x, y]() {
                 Number::drawLower0(getGameConsole().getScreenHandle(), 3, 4, {x, y});
             });
+
+            defender.getBoard().getOwnBoardSigns()->push_back([this, x, y]() {
+                Number::drawLower0(getGameConsole().getScreenHandle(), 3, 4, {x - 120, y});
+            });
             
             int indexX = (x - 144) / 8;
             int indexY = (y - 9) / 5;
@@ -297,6 +329,10 @@ void ShootMenu::fillTheSpaceEW(Player &defender, int startY, int startX, int end
 
             defender.getBoard().getSigns()->push_back([this, x, y]() {
                 Number::drawLower0(getGameConsole().getScreenHandle(), 3, 4, {x, y});
+            });
+
+            defender.getBoard().getOwnBoardSigns()->push_back([this, x, y]() {
+                Number::drawLower0(getGameConsole().getScreenHandle(), 3, 4, {x - 120, y});
             });
 
             int indexX = (x - 144) / 8;

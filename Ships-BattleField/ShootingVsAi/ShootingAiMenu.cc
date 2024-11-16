@@ -3,6 +3,8 @@
 #include "ShootingAiMenu.h"
 #include "../Message/Message.cc"
 
+#include <chrono>
+
 ShootingAiMenu::ShootingAiMenu(Console& gameConsole, Player &player, Ai &ai) : gameConsole(gameConsole), player(player), ai(ai) 
 {
     
@@ -36,6 +38,7 @@ void ShootingAiMenu::drawMenu()
     getAi().getAiBoard().setOffset(130);
     getAi().getAiBoard().synchronizeShips();
     getAi().getAiBoard().drawBoard();
+    getAi().getAiBoard().drawDefeatedShips();
     getAi().getAiBoard().drawSigns();
 }
 
@@ -51,10 +54,12 @@ void ShootingAiMenu::checkEvents()
 
     bool isUpdated = true;
     bool isPlayersTurn = true;
+
     Point2D lastHit = {-1, -1};
+    Point2D solidHit = {-1, -1};
+
     int aiShipsAmount = 10;
     int playerShipsAmount = 10;
-    int targettedShipIndex = 0;
 
     while(aiShipsAmount > 0 && playerShipsAmount > 0)
     {
@@ -70,7 +75,7 @@ void ShootingAiMenu::checkEvents()
         }   
         else
         {
-            makeAiTurn(lastHit, playerShipsAmount, targettedShipIndex, isPlayersTurn, isUpdated);
+            makeAiTurn(lastHit, solidHit, playerShipsAmount, isPlayersTurn, isUpdated);
         }
 
     }
@@ -111,6 +116,7 @@ void ShootingAiMenu::makePlayersTurn(POINT& cursor, POINT& consoleCursor, int& a
 
                 if (playerIsSinked(consoleCursor))
                 {
+                    getAi().getAiBoard().drawDefeatedShips();
                     fillTheSpace(consoleCursor);
                     getAi().getAiBoard().drawSigns();
 
@@ -182,13 +188,25 @@ bool ShootingAiMenu::playerIsSinked(POINT &consoleCursor)
     int endX = Convertions::MIN(ship->getStart().getX(), ship->getEnd().getX());
     int endY = Convertions::MIN(ship->getStart().getY(), ship->getEnd().getY());
 
+    bool isSinked = false;
+
     if (ship->getDirection() == 'N' || ship->getDirection() == 'S')
     {
-        return playerIsSinkedNS(startY, endY, startX);
+        if (isSinked = playerIsSinkedNS(startY, endY, startX))
+        {
+            getAi().getAiBoard().getDefeatedShips()->push_back(ship);
+        }
+
+        return isSinked;
     }
     else
     {
-        return playerIsSinkedEW(startX, endX, startY);
+        if (isSinked = playerIsSinkedEW(startX, endX, startY))
+        {
+            getAi().getAiBoard().getDefeatedShips()->push_back(ship);
+        }
+
+        return isSinked;
     }
 }
 
@@ -359,34 +377,38 @@ void ShootingAiMenu::roundCursor(POINT &consoleCursor)
     consoleCursor.y = nearestY;
 }
 
-void ShootingAiMenu::makeAiTurn(Point2D& lastHit, int& playerShipsAmount, int& targettedShipIndex, bool& isPlayersTurn, bool& isUpdated)
+void ShootingAiMenu::makeAiTurn(Point2D& lastHit, Point2D& solidHit, int& playerShipsAmount, bool& isPlayersTurn, bool& isUpdated)
 {
     isUpdated = true;
     Point2D hit = {0, 0};
 
     bool isHitted = false;
 
-    if (targettedShipIndex < 0 || lastHit.getX() < 0 || lastHit.getY() < 0)
+    if (lastHit.getX() < 0 || lastHit.getY() < 0)
     {
         hit = getAi().getRandomShoot(getPlayer());
     }
     else
     {
-        hit = calculateNewHit(targettedShipIndex, lastHit);
+        hit = calculateNewHit(lastHit, solidHit);
     }
 
     Console::staticSleep(300);
     
     if (isHitted = isHittedAi(hit))
     {
-        targettedShipIndex = findShipIndexAi(hit);
+        if (solidHit.getX() == -1 && solidHit.getY() == -1)
+        {
+            solidHit = hit;
+        }
+
         lastHit = hit;
         
         if (isSinkedAi(hit))
         {
+            solidHit = Point2D(-1, -1);
             playerShipsAmount--;
             fillTheSpaceAi(hit);
-            targettedShipIndex = -1;
         }
     }
     else
@@ -423,7 +445,7 @@ bool ShootingAiMenu::isHittedAi(Point2D& hit)
     return false;
 }
 
-Point2D ShootingAiMenu::calculateNewHit(int& targettedShipIndex, Point2D& lastHit)
+Point2D ShootingAiMenu::calculateNewHit(Point2D& lastHit, Point2D& solidHit)
 {
     std::random_device seed;
     std::mt19937 generator(seed());
@@ -433,8 +455,7 @@ Point2D ShootingAiMenu::calculateNewHit(int& targettedShipIndex, Point2D& lastHi
 
     while (true)
     {
-        newHit = (perfectProcentage(generator) % 2 == 0) ? getPerfectHit(targettedShipIndex, lastHit) : getBadHit(lastHit);
-
+        newHit = getHit(lastHit, solidHit);
 
         if (!getPlayer().getBoard().getShoots()->at(newHit.getY()).at(newHit.getX()))
         {
@@ -445,62 +466,16 @@ Point2D ShootingAiMenu::calculateNewHit(int& targettedShipIndex, Point2D& lastHi
     
 }
 
-Point2D ShootingAiMenu::getPerfectHit(int& targettedShipIndex, Point2D& lastHit)
+Point2D ShootingAiMenu::getHit(Point2D& lastHit, Point2D& solidHit)
 {
-    char direction = getPlayer().getBoard().getShips()->at(targettedShipIndex)->getDirection();
-
-    Point2D start = getPlayer().getBoard().getShips()->at(targettedShipIndex)->getStart();
-    Point2D end = getPlayer().getBoard().getShips()->at(targettedShipIndex)->getEnd();
-
-    start.setX((start.getX() - 26) / 8);
-    start.setY((start.getY() - 10) / 5);
-
-    end.setX((end.getX() - 26) / 8);
-    end.setY((end.getY() - 10) / 5);
-
-    int startX = Convertions::MAX(start.getX(), end.getX());
-    int startY = Convertions::MAX(start.getY(), end.getY());
-    int endX = Convertions::MIN(start.getX(), end.getX());
-    int endY = Convertions::MIN(start.getY(), end.getY());
-    
-    std::vector<Point2D> freePoints;
-
-    for (int i = endY; i <= startY; i++)
-    {
-        for (int j = endX; j <= startX; j++)
-        {
-            if (getPlayer().getBoard().getShoots()->at(i).at(j) == false)
-            {
-                freePoints.push_back({j, i});
-            }
-        }
-    }
-
-    if (!freePoints.empty())
-    {
-        std::random_device seed;
-        std::mt19937 generator(seed());
-        std::uniform_int_distribution<> randomDistributor(0, freePoints.size() - 1);
-
-        return freePoints.at(randomDistributor(generator));
-    }
-
-    targettedShipIndex = -1;
-    
-    return getAi().getRandomShoot(getPlayer());
-}
-
-Point2D ShootingAiMenu::getBadHit(Point2D& lastHit)
-{
-    char direction = getBadHitDirection(lastHit);
+    char direction = getHitDirection(lastHit, solidHit);
     
     return getHitBasedOnDirection(lastHit, direction);
 }
 
-std::vector<char> ShootingAiMenu::unSetDirections(std::vector<char> &options, Point2D &lastHit)
+std::vector<char> ShootingAiMenu::unSetDirections(Point2D &lastHit)
 {
     std::vector<char> validOptions;
-
 
     if (lastHit.getX() > 0 && !getPlayer().getBoard().getShoots()->at(lastHit.getY()).at(lastHit.getX() - 1))
     {
@@ -549,20 +524,32 @@ Point2D ShootingAiMenu::getHitBasedOnDirection(Point2D &lastHit, char direction)
         break;
     }
 }
-char ShootingAiMenu::getBadHitDirection(Point2D &lastHit)
+char ShootingAiMenu::getHitDirection(Point2D &lastHit, Point2D& solidHit)
 {
-    std::vector<char> options = {'N', 'E', 'S', 'W'};
+    std::vector<char> options = unSetDirections(lastHit);
 
-    options = unSetDirections(options, lastHit);
+    if (options.empty())
+    {
+        if (solidHit.getX() != -1 && solidHit.getY() != -1)
+        {
+            lastHit = solidHit;
 
-    std::random_device seed;
-    std::mt19937 generator(seed());
+            options = unSetDirections(lastHit);
+        }
+        else
+        {
+            return 'O';
+        }
+    }
+    
+
+    std::random_device deviceSeed;
+    auto timeSeed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+    std::mt19937 generator(deviceSeed() ^ timeSeed); //XOR
     std::uniform_int_distribution<> randomDirection(0, options.size() - 1);
 
-    char random = options.at(randomDirection(generator));
-    return random;
+    return options.at(randomDirection(generator));
 }
-
 
 bool ShootingAiMenu::isSinkedAi(Point2D &consoleCursor)
 {

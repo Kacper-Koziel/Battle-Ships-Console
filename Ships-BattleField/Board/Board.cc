@@ -83,6 +83,11 @@ void Board::synchronizeShips()
     }
 }
 
+void Board::synchronizeSigns()
+{
+
+}
+
 void Board::drawBoard()
 {
     short offset = getOffset();
@@ -203,6 +208,14 @@ void Board::drawShips()
     }
 }
 
+void Board::drawDefeatedShips()
+{
+    for(int i = 0; i < getDefeatedShips()->size(); i++)
+    {
+        drawShipDirection(getDefeatedShips()->at(i));
+    }
+}
+
 void Board::drawShipDirection(std::shared_ptr<Base> ship)
 {
     switch (ship->getDirection())
@@ -231,6 +244,14 @@ void Board::drawShipDirection(std::shared_ptr<Base> ship)
 void Board::drawSigns()
 {
     for(auto& draw : *getSigns())
+    {
+        draw();
+    }
+}
+
+void Board::drawOwnSigns()
+{
+    for(auto& draw : *getOwnBoardSigns())
     {
         draw();
     }

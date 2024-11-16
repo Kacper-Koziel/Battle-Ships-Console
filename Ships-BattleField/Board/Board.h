@@ -20,7 +20,9 @@ private:
 
     std::vector<std::vector<bool>>* hiddenShips = new std::vector<std::vector<bool>>();
     std::vector<std::shared_ptr<Base>>* ships = new std::vector<std::shared_ptr<Base>>();
+    std::vector<std::shared_ptr<Base>>* defeatedShips = new std::vector<std::shared_ptr<Base>>();
     std::shared_ptr<std::vector<std::function<void()>>> signs = std::make_shared<std::vector<std::function<void()>>>(); //In this line more happends than in my whole life. Im terrified
+    std::shared_ptr<std::vector<std::function<void()>>> ownBoardSigns = std::make_shared<std::vector<std::function<void()>>>();
     std::vector<std::vector<bool>>* hasBeenShoot = new std::vector<std::vector<bool>>();
     
 public:
@@ -39,19 +41,24 @@ public:
     
     std::vector<std::vector<bool>>* getShoots() { return this->hasBeenShoot; }
     std::vector<std::shared_ptr<Base>>* getShips() { return this->ships; }
+    std::vector<std::shared_ptr<Base>>* getDefeatedShips() { return this->defeatedShips; }
     std::shared_ptr<std::vector<std::function<void()>>> getSigns() { return this->signs; }
+    std::shared_ptr<std::vector<std::function<void()>>> getOwnBoardSigns() { return this->ownBoardSigns; }
 
     void clearHiddenShips();
 
     void setShipValue(std::shared_ptr<Base> value, int index);
     void synchronizePoints();
     void synchronizeShips();
+    void synchronizeSigns();
 
     void drawBoard();
     void drawPoints();
     void drawShips();
+    void drawDefeatedShips();
     void drawShipDirection(std::shared_ptr<Base> ship);
     void drawSigns();
+    void drawOwnSigns();
 
     void clearData();
 };

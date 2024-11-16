@@ -39,7 +39,7 @@
         int findShipIndex(POINT& consoleCursor);
         void roundCursor(POINT& cursor);
 
-        void makeAiTurn(Point2D& lastHit, int& playerShipsAmount, int& targettedShipIndex,bool& isPlayersTurn, bool& isUpdated);
+        void makeAiTurn(Point2D& lastHit, Point2D& solidHit, int& playerShipsAmount, bool& isPlayersTurn, bool& isUpdated);
 
         bool isHittedAi(Point2D& hit);
 
@@ -51,13 +51,12 @@
         void fillTheSpaceNSAi(int startX, int startY, int endX, int endY);
         void fillTheSpaceEWAi(int startY, int endX, int startX);
 
-        Point2D calculateNewHit(int& targettedShipIndex, Point2D& lastHit);
-        Point2D getPerfectHit(int& targettedShipIndex, Point2D& lastHit);
-        Point2D getBadHit(Point2D& lastHit);
+        Point2D calculateNewHit(Point2D& lastHit, Point2D& solidHit);
+        Point2D getHit(Point2D& lastHit, Point2D& solidHit);
 
-        std::vector<char> unSetDirections(std::vector<char> &options, Point2D &lastHit);
+        std::vector<char> unSetDirections(Point2D &lastHit);
         Point2D getHitBasedOnDirection(Point2D &lastHit, char direction);
-        char getBadHitDirection(Point2D& lastHit);
+        char getHitDirection(Point2D& lastHit, Point2D& solidHit);
 
         int findShipIndexAi(Point2D& coords);
 
