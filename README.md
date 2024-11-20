@@ -1,21 +1,39 @@
-# Battle-Ships-Console project
+# BattleShips Console Game
 
-Console version of BattleShips game. School project.
+A console implementation of the classic Battleships game. This is a school project that allows you to play Battleships in the console environment.
 
-# Description
-Project is a console implementation of Battleships game.
+## Table of Contents
 
-# Functionality
-- Player vs Player mode.
-- Player vs Computer mode.
-- Handles mouse & keyboard input.
-- No liblaries
+- [Description](#description)
+- [Features](#features)
+- [Technologies Used](#technologies-used)
+- [Installation](#installation)
+- [Contact](#contact)
 
-# Technologies used
-- Windows API
-- Unicode
-- C++ STD liblary
+## Description
+
+This project is a console-based version of the Battleships game. It allows for both Player vs Player and Player vs Computer modes, handling mouse and keyboard input without the use of external libraries.
+
+## Features
+
+- **Game Modes**:
+  - Player vs Player
+  - Player vs Computer
+- **Input Handling**: Supports mouse and keyboard input.
+- **No External Libraries**: Utilizes Windows API and C++ Standard Library without additional libraries.
+
+## Technologies Used
+
+- **C++ Standard Library**
+- **Windows API**
+- **Unicode Support**
+
+## Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Kacper-Koziel/Battle-Ships-Console.git
 
 # Contact
-- By github,
-- discord: eeeeh._.
+- **GitHub**: [Kacper Koziel](https://github.com/Kacper-Koziel)
+- **Discord**: @eeeeh._.
