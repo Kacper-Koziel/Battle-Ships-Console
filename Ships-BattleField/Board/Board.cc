@@ -270,6 +270,6 @@ void Board::clearData()
     }
 
     getSigns()->clear();
-    
+    getDefeatedShips()->clear();
     
 }
